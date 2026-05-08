@@ -2,324 +2,348 @@ import turtle
 import random
 import time
 
-# =========================================================
-# BUILDING AND RUNNING MAZES
-# DFS Maze Generator + Backtracking Solver
-# =========================================================
+                                          # BUILDING AND RUNNING MAZES
+                                    # DFS Maze Generator + Backtracking Solver
 
-# -----------------------------
-# MAZE SETTINGS
-# -----------------------------
-R = 15                     # Rows
-C = 15                     # Columns
+                                    
+                                               # MAZE SETTINGS
+ROWS = 15
+COLS = 15
 CELL_SIZE = 30
 
-# -----------------------------
+# ---------------------------------------------------------
 # WALL DATA STRUCTURES
 # 1 = Wall exists
 # 0 = Wall removed
-# -----------------------------
-northWall = [[1 for _ in range(C)] for _ in range(R)]
-eastWall = [[1 for _ in range(C)] for _ in range(R)]
+# ---------------------------------------------------------
+northWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
+eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 
-# Tracks visited cells
-visited = [[False for _ in range(C)] for _ in range(R)]
+# Track visited cells during maze generation
+visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
 
-# =========================================================
-# TURTLE SCREEN SETUP
-# =========================================================
+
+                                         # START AND END POSITIONS
+START_ROW = 0
+START_COL = 0
+
+END_ROW = ROWS - 1
+END_COL = COLS - 1
+
+
+                                             # TURTLE SCREEN SETUP
 screen = turtle.Screen()
 screen.title("Maze Generator and Solver - Hawi Jarso")
 screen.bgcolor("white")
 screen.setup(width=900, height=900)
 
-# Makes animation smoother
+# Smooth animation
 screen.tracer(0)
 
-# Turtle for drawing maze
-t = turtle.Turtle()
-t.hideturtle()
-t.speed(0)
-t.pensize(2)
+# Turtle for maze drawing
+maze_turtle = turtle.Turtle()
+maze_turtle.hideturtle()
+maze_turtle.speed(0)
+maze_turtle.pensize(2)
 
-# Turtle for solver
-dot = turtle.Turtle()
-dot.hideturtle()
-dot.penup()
-dot.speed(0)
+# Turtle for solving animation
+solver_turtle = turtle.Turtle()
+solver_turtle.hideturtle()
+solver_turtle.penup()
+solver_turtle.speed(0)
 
-# =========================================================
-# HELPER FUNCTION
-# Convert row/column into screen coordinates
-# =========================================================
-def get_coords(r, c):
 
-    offset_x = -(C * CELL_SIZE) / 2
-    offset_y = -(R * CELL_SIZE) / 2
+                                                   # HELPER FUNCTION
+# Convert row/column to screen coordinates
+def get_coords(row, col):
 
-    x = offset_x + c * CELL_SIZE
-    y = offset_y + r * CELL_SIZE
+    offset_x = -(COLS * CELL_SIZE) / 2
+    offset_y = -(ROWS * CELL_SIZE) / 2
+
+    x = offset_x + col * CELL_SIZE
+    y = offset_y + row * CELL_SIZE
 
     return x, y
 
-# =========================================================
-# DRAW MAZE
-# =========================================================
+
 def draw_maze():
 
-    t.clear()
+    maze_turtle.clear()
 
-    # -------------------------------------------------
-    # DRAW INTERNAL WALLS
-    # -------------------------------------------------
-    for r in range(R):
-        for c in range(C):
+    
+                                                    # DRAW INTERNAL WALLS
+    for row in range(ROWS):
+        for col in range(COLS):
 
-            x, y = get_coords(r, c)
+            x, y = get_coords(row, col)
 
             # NORTH WALL
-            if northWall[r][c] == 1:
+            if northWall[row][col] == 1:
 
-                t.penup()
-                t.goto(x, y + CELL_SIZE)
+                maze_turtle.penup()
+                maze_turtle.goto(x, y + CELL_SIZE)
 
-                t.pendown()
-                t.goto(x + CELL_SIZE, y + CELL_SIZE)
+                maze_turtle.pendown()
+                maze_turtle.goto(x + CELL_SIZE, y + CELL_SIZE)
 
             # EAST WALL
-            if eastWall[r][c] == 1:
+            if eastWall[row][col] == 1:
 
-                t.penup()
-                t.goto(x + CELL_SIZE, y)
+                maze_turtle.penup()
+                maze_turtle.goto(x + CELL_SIZE, y)
 
-                t.pendown()
-                t.goto(x + CELL_SIZE, y + CELL_SIZE)
+                maze_turtle.pendown()
+                maze_turtle.goto(x + CELL_SIZE, y + CELL_SIZE)
 
-    # -------------------------------------------------
-    # LEFT OUTER BORDER
-    # -------------------------------------------------
-    for r in range(R):
+   
+                                                    # LEFT OUTER BORDER
+    # Create entrance opening
+    for row in range(ROWS):
 
-        x, y = get_coords(r, 0)
+        # Skip wall for entrance
+        if row == START_ROW:
+            continue
 
-        t.penup()
-        t.goto(x, y)
+        x, y = get_coords(row, 0)
 
-        t.pendown()
-        t.goto(x, y + CELL_SIZE)
+        maze_turtle.penup()
+        maze_turtle.goto(x, y)
 
-    # -------------------------------------------------
-    # BOTTOM OUTER BORDER
-    # -------------------------------------------------
-    for c in range(C):
+        maze_turtle.pendown()
+        maze_turtle.goto(x, y + CELL_SIZE)
 
-        x, y = get_coords(0, c)
+                                            # Bottom Outer Border
+    for col in range(COLS):
 
-        t.penup()
-        t.goto(x, y)
+        x, y = get_coords(0, col)
 
-        t.pendown()
-        t.goto(x + CELL_SIZE, y)
+        maze_turtle.penup()
+        maze_turtle.goto(x, y)
 
-    # -------------------------------------------------
-    # TOP OUTER BORDER
-    # -------------------------------------------------
-    top_y = get_coords(R - 1, 0)[1] + CELL_SIZE
+        maze_turtle.pendown()
+        maze_turtle.goto(x + CELL_SIZE, y)
 
-    for c in range(C):
+    
+                                                # TOP OUTER BORDER
+    top_y = get_coords(ROWS - 1, 0)[1] + CELL_SIZE
 
-        x, _ = get_coords(R - 1, c)
+    for col in range(COLS):
+        if col == COLS -1:
+            continue
 
-        t.penup()
-        t.goto(x, top_y)
+        x, _ = get_coords(ROWS - 1, col)
 
-        t.pendown()
-        t.goto(x + CELL_SIZE, top_y)
+        maze_turtle.penup()
+        maze_turtle.goto(x, top_y)
 
-    # -------------------------------------------------
+        maze_turtle.pendown()
+        maze_turtle.goto(x + CELL_SIZE, top_y)
+
+
     # RIGHT OUTER BORDER
-    # -------------------------------------------------
-    right_x = get_coords(0, C - 1)[0] + CELL_SIZE
+    # Create exit opening
+    # -----------------------------------------------------
+    right_x = get_coords(0, COLS - 1)[0] + CELL_SIZE
 
-    for r in range(R):
+    for row in range(ROWS):
 
-        _, y = get_coords(r, C - 1)
+        # Skip wall for exit
+        if row == END_ROW:
+            continue
 
-        t.penup()
-        t.goto(right_x, y)
+        _, y = get_coords(row, COLS - 1)
 
-        t.pendown()
-        t.goto(right_x, y + CELL_SIZE)
+        maze_turtle.penup()
+        maze_turtle.goto(right_x, y)
+
+        maze_turtle.pendown()
+        maze_turtle.goto(right_x, y + CELL_SIZE)
 
     screen.update()
 
-# =========================================================
+
 # GENERATE MAZE
-# Uses DFS + Stack Backtracking
-# =========================================================
-def generate_maze(start_r, start_c):
+# DFS + Stack Backtracking
+def generate_maze(start_row, start_col):
 
-    stack = [(start_r, start_c)]
+    stack = [(start_row, start_col)]
 
-    visited[start_r][start_c] = True
+    visited[start_row][start_col] = True
 
     while stack:
 
-        r, c = stack[-1]
+        current_row, current_col = stack[-1]
 
         neighbors = []
 
-        # -------------------------------------------------
-        # CHECK NEIGHBOR CELLS
-        # -------------------------------------------------
-
+       
+                                             # CHECK UNVISITED NEIGHBORS
         # UP
-        if r + 1 < R and not visited[r + 1][c]:
-            neighbors.append((r + 1, c, "N", r, c))
+        if (
+            current_row + 1 < ROWS
+            and not visited[current_row + 1][current_col]
+        ):
+            neighbors.append(
+                (current_row + 1, current_col,
+                 "N", current_row, current_col)
+            )
 
         # RIGHT
-        if c + 1 < C and not visited[r][c + 1]:
-            neighbors.append((r, c + 1, "E", r, c))
+        if (
+            current_col + 1 < COLS
+            and not visited[current_row][current_col + 1]
+        ):
+            neighbors.append(
+                (current_row, current_col + 1,
+                 "E", current_row, current_col)
+            )
 
         # DOWN
-        if r - 1 >= 0 and not visited[r - 1][c]:
-            neighbors.append((r - 1, c, "N", r - 1, c))
+        if (
+            current_row - 1 >= 0
+            and not visited[current_row - 1][current_col]
+        ):
+            neighbors.append(
+                (current_row - 1, current_col,
+                 "N", current_row - 1, current_col)
+            )
 
         # LEFT
-        if c - 1 >= 0 and not visited[r][c - 1]:
-            neighbors.append((r, c - 1, "E", r, c - 1))
+        if (
+            current_col - 1 >= 0
+            and not visited[current_row][current_col - 1]
+        ):
+            neighbors.append(
+                (current_row, current_col - 1,
+                 "E", current_row, current_col - 1)
+            )
 
-        # -------------------------------------------------
-        # MOVE TO RANDOM NEIGHBOR
-        # -------------------------------------------------
+        
+                                         # MOVE TO RANDOM NEIGHBOR
         if neighbors:
 
-            nr, nc, wall_type, wr, wc = random.choice(neighbors)
+            next_row, next_col, wall_type, wall_row, wall_col = (
+                random.choice(neighbors)
+            )
 
             # Remove wall
             if wall_type == "N":
-                northWall[wr][wc] = 0
+                northWall[wall_row][wall_col] = 0
             else:
-                eastWall[wr][wc] = 0
+                eastWall[wall_row][wall_col] = 0
 
-            visited[nr][nc] = True
+            visited[next_row][next_col] = True
 
-            stack.append((nr, nc))
+            stack.append((next_row, next_col))
 
             # Animate generation
             if random.random() < 0.25:
                 draw_maze()
 
-        # -------------------------------------------------
-        # DEAD END -> BACKTRACK
-        # -------------------------------------------------
-        else:
+        else:             # DEAD END -> BACKTRACK
             stack.pop()
 
-    # =====================================================
+    
     # BONUS SECTION
-    # Add extra openings to create cycles
-    # =====================================================
+    # Remove extra walls to create cycles
     for _ in range(3):
 
-        r = random.randint(1, R - 2)
-        c = random.randint(1, C - 2)
+        random_row = random.randint(1, ROWS - 2)
+        random_col = random.randint(1, COLS - 2)
 
         if random.choice([True, False]):
-            northWall[r][c] = 0
+            northWall[random_row][random_col] = 0
         else:
-            eastWall[r][c] = 0
+            eastWall[random_row][random_col] = 0
 
     draw_maze()
 
-# =========================================================
+
 # SOLVE MAZE
-# Uses Backtracking Algorithm
-# =========================================================
-def solve_maze(start_r, start_c, end_r, end_c):
+# Backtracking Algorithm
+def solve_maze(start_row, start_col, end_row, end_col):
 
-    stack = [(start_r, start_c)]
+    stack = [(start_row, start_col)]
 
-    solve_visited = [[False for _ in range(C)] for _ in range(R)]
+    solve_visited = [
+        [False for _ in range(COLS)]
+        for _ in range(ROWS)
+    ]
 
-    solve_visited[start_r][start_c] = True
+    solve_visited[start_row][start_col] = True
 
     while stack:
 
-        r, c = stack[-1]
+        current_row, current_col = stack[-1]
 
-        x, y = get_coords(r, c)
+        x, y = get_coords(current_row, current_col)
 
-        # -------------------------------------------------
-        # DRAW CURRENT POSITION (RED)
-        # -------------------------------------------------
-        dot.goto(x + CELL_SIZE / 2, y + CELL_SIZE / 2)
-        dot.dot(10, "red")
+                                              # Draw Current Position
+        solver_turtle.goto(
+            x + CELL_SIZE / 2,
+            y + CELL_SIZE / 2
+        )
 
-        # -------------------------------------------------
+        solver_turtle.dot(10, "red")
+
+    
         # TARGET REACHED
-        # -------------------------------------------------
-        if (r, c) == (end_r, end_c):
+        if (current_row, current_col) == (end_row, end_col):
 
-            print("Target Reached!")
+            print("Maze Solved!")
             break
 
         valid_moves = []
 
-        # -------------------------------------------------
-        # CHECK VALID MOVES
-        # -------------------------------------------------
+                                         # CHECK VALID MOVES
 
         # UP
         if (
-            r + 1 < R
-            and not solve_visited[r + 1][c]
-            and northWall[r][c] == 0
+            current_row + 1 < ROWS
+            and not solve_visited[current_row + 1][current_col]
+            and northWall[current_row][current_col] == 0
         ):
-            valid_moves.append((r + 1, c))
+            valid_moves.append((current_row + 1, current_col))
 
         # RIGHT
         if (
-            c + 1 < C
-            and not solve_visited[r][c + 1]
-            and eastWall[r][c] == 0
+            current_col + 1 < COLS
+            and not solve_visited[current_row][current_col + 1]
+            and eastWall[current_row][current_col] == 0
         ):
-            valid_moves.append((r, c + 1))
+            valid_moves.append((current_row, current_col + 1))
 
         # DOWN
         if (
-            r - 1 >= 0
-            and not solve_visited[r - 1][c]
-            and northWall[r - 1][c] == 0
+            current_row - 1 >= 0
+            and not solve_visited[current_row - 1][current_col]
+            and northWall[current_row - 1][current_col] == 0
         ):
-            valid_moves.append((r - 1, c))
+            valid_moves.append((current_row - 1, current_col))
 
         # LEFT
         if (
-            c - 1 >= 0
-            and not solve_visited[r][c - 1]
-            and eastWall[r][c - 1] == 0
+            current_col - 1 >= 0
+            and not solve_visited[current_row][current_col - 1]
+            and eastWall[current_row][current_col - 1] == 0
         ):
-            valid_moves.append((r, c - 1))
+            valid_moves.append((current_row, current_col - 1))
 
-        # -------------------------------------------------
-        # MOVE FORWARD
-        # -------------------------------------------------
+                                                # Move Forward
         if valid_moves:
 
-            next_r, next_c = random.choice(valid_moves)
+            next_row, next_col = random.choice(valid_moves)
 
-            solve_visited[next_r][next_c] = True
+            solve_visited[next_row][next_col] = True
 
-            stack.append((next_r, next_c))
+            stack.append((next_row, next_col))
 
-        # -------------------------------------------------
+        
         # DEAD END -> BACKTRACK
-        # -------------------------------------------------
         else:
 
-            # Blue dots show dead ends
-            dot.dot(10, "blue")
+            # BLUE DOT = dead end
+            solver_turtle.dot(10, "blue")
 
             stack.pop()
 
@@ -327,15 +351,20 @@ def solve_maze(start_r, start_c, end_r, end_c):
 
         time.sleep(0.04)
 
-# =========================================================
-# MAIN EXECUTION
-# =========================================================
+ 
+                                                # MAIN PROGRAM
+
 
 # Generate the maze
-generate_maze(0, 0)
+generate_maze(START_ROW, START_COL)
 
 # Solve the maze
-solve_maze(0, 0, R - 1, C - 1)
+solve_maze(
+    START_ROW,
+    START_COL,
+    END_ROW,
+    END_COL
+)
 
 # Keep window open
 turtle.done()
