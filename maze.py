@@ -27,7 +27,7 @@ visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
 START_ROW = 0
 START_COL = 0
 
-END_ROW = ROWS - 1
+END_ROW = 0
 END_COL = COLS - 1
 
 
