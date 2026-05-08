@@ -148,7 +148,7 @@ def draw_maze():
     for row in range(ROWS):
 
         # Skip wall for exit
-        if row == ROWS - 1:
+        if row == END_ROW:
             continue
 
         _, y = get_coords(row, COLS - 1)
